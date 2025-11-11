@@ -32,24 +32,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	"github.com/go-logr/logr"
 	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	k8scorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	awsutil "github.com/external-secrets/external-secrets/providers/v1/aws/util"
+	vaultutil "github.com/external-secrets/external-secrets/providers/v1/vault/util"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
-	"github.com/external-secrets/external-secrets/providers/v1/aws/util"
-	"github.com/external-secrets/external-secrets/providers/v1/vault/util"
-)
-
-var (
-	logger = ctrl.Log.WithName("provider").WithName("vault")
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -64,6 +61,10 @@ const (
 	// AWSContainerCredentialsFullURIEnvVar is the environment variable that points to the full credentials URI for ECS tasks.
 	AWSContainerCredentialsFullURIEnvVar = "AWS_CONTAINER_CREDENTIALS_FULL_URI"
 )
+
+func ctxLog(ctx context.Context) logr.Logger {
+	return logs.CtxLog(ctx, "provider", "vault")
+}
 
 // DefaultJWTProvider returns a credentials.Provider that calls the AssumeRoleWithWebidentity
 // controller-runtime/client does not support TokenRequest or other subresource APIs
@@ -141,7 +142,8 @@ type authTokenFetcher struct {
 // FetchToken satisfies the stscreds.TokenFetcher interface
 // it is used to generate service account tokens which are consumed by the aws sdk.
 func (p authTokenFetcher) FetchToken(ctx credentials.Context) ([]byte, error) {
-	logger.V(1).Info("fetching token", "ns", p.Namespace, "sa", p.ServiceAccount)
+	log := ctxLog(ctx)
+	log.V(1).Info("fetching token", "ns", p.Namespace, "sa", p.ServiceAccount)
 	tokRsp, err := p.k8sClient.ServiceAccounts(p.Namespace).CreateToken(ctx, p.ServiceAccount, &authv1.TokenRequest{
 		Spec: authv1.TokenRequestSpec{
 			Audiences: p.Audiences,
@@ -159,6 +161,7 @@ func (p authTokenFetcher) FetchToken(ctx credentials.Context) ([]byte, error) {
 // If the ClusterSecretStore does not define a namespace it will use the namespace from the ExternalSecret (referentAuth).
 // If the ClusterSecretStore defines the namespace it will take precedence.
 func CredsFromServiceAccount(ctx context.Context, auth esv1.VaultIamAuth, region string, isClusterKind bool, kube kclient.Client, namespace string, jwtProvider vaultutil.JwtProviderFactory) (*credentials.Credentials, error) {
+	log := ctxLog(ctx)
 	name := auth.JWTAuth.ServiceAccountRef.Name
 	if isClusterKind && auth.JWTAuth.ServiceAccountRef.Namespace != nil {
 		namespace = *auth.JWTAuth.ServiceAccountRef.Namespace
@@ -192,7 +195,7 @@ func CredsFromServiceAccount(ctx context.Context, auth esv1.VaultIamAuth, region
 		return nil, err
 	}
 
-	logger.V(1).Info("using credentials via service account", "role", roleArn, "region", region)
+	log.V(1).Info("using credentials via service account", "role", roleArn, "region", region)
 	return credentials.NewCredentials(jwtProv), nil
 }
 
@@ -201,6 +204,7 @@ func CredsFromServiceAccount(ctx context.Context, auth esv1.VaultIamAuth, region
 // in the ServiceAccount annotation.
 // The namespace of the controller service account is used.
 func CredsFromControllerServiceAccount(ctx context.Context, saName, ns, region string, kube kclient.Client, jwtProvider vaultutil.JwtProviderFactory) (*credentials.Credentials, error) {
+	log := ctxLog(ctx)
 	sa := v1.ServiceAccount{}
 	err := kube.Get(ctx, types.NamespacedName{
 		Name:      saName,
@@ -227,7 +231,7 @@ func CredsFromControllerServiceAccount(ctx context.Context, saName, ns, region s
 		return nil, err
 	}
 
-	logger.V(1).Info("using credentials via service account", "role", roleArn, "region", region)
+	log.V(1).Info("using credentials via service account", "role", roleArn, "region", region)
 	return credentials.NewCredentials(jwtProv), nil
 }
 
