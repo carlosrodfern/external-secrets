@@ -31,12 +31,16 @@ import (
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	vaultutil "github.com/external-secrets/external-secrets/providers/v1/vault/util"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
-	"github.com/external-secrets/external-secrets/providers/v1/vault/util"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
-var _ esv1.SecretsClient = &client{}
+var (
+	nameAppends                    = logs.NameAppends{"vault"}
+	_           esv1.SecretsClient = &client{}
+)
 
 type client struct {
 	kube      kclient.Client
@@ -129,4 +133,9 @@ func (c *client) Close(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }

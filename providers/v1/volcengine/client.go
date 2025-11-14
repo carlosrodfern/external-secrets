@@ -26,13 +26,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	esapi "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
 	notImplemented = "not implemented"
 )
 
-var _ esapi.SecretsClient = &Client{}
+var (
+	nameAppends                     = logs.NameAppends{"volcengine"}
+	_           esapi.SecretsClient = &Client{}
+)
 
 // Client is a client for the Volcengine provider.
 type Client struct {
@@ -111,6 +115,11 @@ func (c *Client) DeleteSecret(_ context.Context, _ esapi.PushSecretRemoteRef) er
 // Close is a no-op for the Volcengine client.
 func (c *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (c *Client) getSecretValue(ctx context.Context, ref esapi.ExternalSecretDataRemoteRef) ([]byte, error) {

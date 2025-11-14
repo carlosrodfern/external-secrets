@@ -29,13 +29,17 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 type client struct {
 	api secretAPI
 }
 
-var _ esv1.SecretsClient = &client{}
+var (
+	nameAppends                    = logs.NameAppends{"secretserver"}
+	_           esv1.SecretsClient = &client{}
+)
 
 // GetSecret supports two types:
 //  1. Get the secrets using the secret ID in ref.key i.e. key: 53974
@@ -141,6 +145,11 @@ func (c *client) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (ma
 
 func (c *client) Close(context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // getSecret retrieves the secret referenced by ref from the Vault API.

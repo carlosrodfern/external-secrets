@@ -27,6 +27,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 type client struct {
@@ -39,6 +40,10 @@ const (
 	errUnmarshalSecret               = "unable to unmarshal secret, is it a valid JSON?: %w"
 	errUnableToGetValue              = "unable to get value for key %s"
 	errGettingAllSecretsNotSupported = "getting all secrets is currently not supported"
+)
+
+var (
+	nameAppends = logs.NameAppends{"fortanix"}
 )
 
 func (c *client) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
@@ -118,4 +123,9 @@ func (c *client) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (ma
 
 func (c *client) Close(context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }

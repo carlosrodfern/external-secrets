@@ -34,6 +34,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils/metadata"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -45,6 +46,7 @@ var (
 	errWriteOnlyOperations     = errors.New("not implemented - the ngrok provider only supports write operations")
 	errVaultDoesNotExist       = errors.New("vault does not exist")
 	errVaultSecretDoesNotExist = errors.New("vault secret does not exist")
+	nameAppends                = logs.NameAppends{"ngrok"}
 )
 
 // PushSecretMetadataSpec defines the structure for metadata used when pushing secrets to ngrok.
@@ -230,6 +232,11 @@ func (c *client) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (ma
 
 func (c *client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (c *client) verifyVaultNameStillMatchesID(ctx context.Context) error {

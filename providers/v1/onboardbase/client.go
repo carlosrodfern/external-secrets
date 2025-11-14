@@ -32,9 +32,10 @@ import (
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	obclient "github.com/external-secrets/external-secrets/providers/v1/onboardbase/client"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/find"
-	obclient "github.com/external-secrets/external-secrets/providers/v1/onboardbase/client"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -47,6 +48,10 @@ const (
 	errMissingOnboardbaseAPIKey                             = "auth.secretRef.onboardbaseAPIKey.key '%s' not found in secret '%s'"
 	errMissingOnboardbasePasscode                           = "auth.secretRef.onboardbasePasscode.key '%s' not found in secret '%s'"
 	errSecretKeyFmt                                         = "cannot find property %s in secret data for key: %q"
+)
+
+var (
+	nameAppends = logs.NameAppends{"onboardbase"}
 )
 
 // Client implements the Onboardbase secrets client.
@@ -236,6 +241,11 @@ func (c *Client) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind)
 // Close implements cleanup operations for the Onboardbase client.
 func (c *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (c *Client) getSecrets(_ context.Context) (map[string][]byte, error) {

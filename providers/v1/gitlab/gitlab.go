@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/tidwall/gjson"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	corev1 "k8s.io/api/core/v1"
@@ -54,9 +53,12 @@ const (
 	errNotImplemented               = "not implemented"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &gitlabBase{}
-var _ esv1.Provider = &Provider{}
+var (
+	nameAppends = logs.NameAppends{"gitlab"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &gitlabBase{}
+	_ esv1.Provider      = &Provider{}
+)
 
 // ProjectsClient is an interface for interacting with GitLab project APIs.
 type ProjectsClient interface {
@@ -81,10 +83,6 @@ type ProjectGroupPathSorter []*gitlab.ProjectGroup
 func (a ProjectGroupPathSorter) Len() int           { return len(a) }
 func (a ProjectGroupPathSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ProjectGroupPathSorter) Less(i, j int) bool { return len(a[i].FullPath) < len(a[j].FullPath) }
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "gitlab")
-}
 
 // Set gitlabBase credentials to Access Token.
 func (g *gitlabBase) getAuth(ctx context.Context) (string, error) {
@@ -418,6 +416,11 @@ func (g *gitlabBase) Close(_ context.Context) error {
 	return nil
 }
 
+// GetNameAppends provides logger names for the contextual logger.
+func (g *gitlabBase) GetNameAppends() logs.NameAppends {
+	return nameAppends
+}
+
 func (g *gitlabBase) ResolveGroupIDs() error {
 	if g.store.InheritFromGroups {
 		projectGroups, resp, err := g.projectsClient.ListProjectsGroups(g.store.ProjectID, nil)
@@ -437,7 +440,7 @@ func (g *gitlabBase) ResolveGroupIDs() error {
 
 // Validate will use the gitlab projectVariablesClient/groupVariablesClient to validate the gitlab provider using the ListVariable call to ensure get permissions without needing a specific key.
 func (g *gitlabBase) Validate() (esv1.ValidationResult, error) {
-	log := ctxLog(context.Background())
+	log := logs.CtxLog(context.Background())
 	if g.store.ProjectID != "" {
 		_, resp, err := g.projectVariablesClient.ListVariables(g.store.ProjectID, nil)
 		metrics.ObserveAPICall(constants.ProviderGitLab, constants.CallGitLabProjectListVariables, err)

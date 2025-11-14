@@ -30,10 +30,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &Client{}
+var (
+	nameAppends = logs.NameAppends{"github"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &Client{}
+)
 
 // ActionsServiceClient defines the interface for interacting with GitHub Actions secrets.
 type ActionsServiceClient interface {
@@ -160,6 +164,11 @@ func (g *Client) GetSecretMap(_ context.Context, _ esv1.ExternalSecretDataRemote
 // Close cleans up any resources held by the client. No-op for this provider.
 func (g *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (g *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate checks if the client is properly configured and has access to the GitHub Actions API.

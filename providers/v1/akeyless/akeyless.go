@@ -44,6 +44,7 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/find"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 // Ctx is a type used for context keys in Akeyless provider implementations.
@@ -55,9 +56,12 @@ const (
 	aKeylessToken       Ctx = "AKEYLESS_TOKEN"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &Akeyless{}
-var _ esv1.Provider = &Provider{}
+var (
+	nameAppends = logs.NameAppends{"akeyless"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &Akeyless{}
+	_ esv1.Provider      = &Provider{}
+)
 
 // Provider satisfies the provider interface.
 type Provider struct{}
@@ -243,6 +247,11 @@ func (a *Akeyless) contextWithToken(ctx context.Context) (context.Context, error
 // Close closes the Akeyless client connection.
 func (a *Akeyless) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (a *Akeyless) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate validates the Akeyless connection by testing network connectivity.

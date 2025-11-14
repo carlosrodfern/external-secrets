@@ -34,6 +34,7 @@ import (
 	vaultiamauth "github.com/external-secrets/external-secrets/providers/v1/vault/iamauth"
 	vaultutil "github.com/external-secrets/external-secrets/providers/v1/vault/util"
 	"github.com/external-secrets/external-secrets/runtime/constants"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
 )
 
@@ -61,7 +62,7 @@ func setIamAuthToken(ctx context.Context, v *client, jwtProvider vaultutil.JwtPr
 }
 
 func (c *client) requestTokenWithIamAuth(ctx context.Context, iamAuth *esv1.VaultIamAuth, isClusterKind bool, k kclient.Client, n string, jwtProvider vaultutil.JwtProviderFactory, assumeRoler vaultiamauth.STSProvider) error {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	jwtAuth := iamAuth.JWTAuth
 	secretRefAuth := iamAuth.SecretRef
 	regionAWS := c.getRegionOrDefault(iamAuth.Region)
@@ -162,7 +163,7 @@ func (c *client) getAuthMountPathOrDefault(path string) string {
 }
 
 func (c *client) getControllerPodCredentials(ctx context.Context, region string, k kclient.Client, jwtProvider vaultutil.JwtProviderFactory) (*credentials.Credentials, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	// First try IRSA (Web Identity Token) - checking if controller pod's service account is IRSA enabled
 	tokenFile := os.Getenv(vaultiamauth.AWSWebIdentityTokenFileEnvVar)
 	if tokenFile != "" {

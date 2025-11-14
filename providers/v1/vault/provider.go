@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
 	vault "github.com/hashicorp/vault/api"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/kubernetes"
@@ -55,10 +54,6 @@ const (
 const (
 	defaultCacheSize = 2 << 17
 )
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "vault")
-}
 
 // Provider implements the ESO Provider interface for Hashicorp Vault.
 type Provider struct {
@@ -191,7 +186,7 @@ func (p *Provider) prepareConfig(ctx context.Context, kube kclient.Client, corev
 		kube:      kube,
 		corev1:    corev1,
 		store:     vaultSpec,
-		log:       ctxLog(ctx),
+		log:       logs.CtxLog(ctx),
 		namespace: namespace,
 		storeKind: storeKind,
 	}
@@ -303,7 +298,7 @@ func isReferentSpec(prov *esv1.VaultProvider) bool {
 }
 
 func initCache(size int) {
-	log := ctxLog(context.TODO())
+	log := logs.CtxLog(context.TODO())
 	log.Info("initializing vault cache", "size", size)
 	clientCache = cache.Must(size, func(client vaultutil.Client) {
 		err := revokeTokenIfValid(context.Background(), client)

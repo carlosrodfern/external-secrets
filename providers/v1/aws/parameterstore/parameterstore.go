@@ -28,7 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/aws/smithy-go"
-	"github.com/go-logr/logr"
 	"github.com/tidwall/gjson"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -65,6 +64,7 @@ var (
 	_               esv1.SecretsClient = &ParameterStore{}
 	managedBy                          = "managed-by"
 	externalSecrets                    = "external-secrets"
+	nameAppends                        = logs.NameAppends{"aws", "parameterstore"}
 )
 
 // ParameterStore is a provider for AWS ParameterStore.
@@ -92,10 +92,6 @@ const (
 	errUnexpectedFindOperator    = "unexpected find operator"
 	errCodeAccessDeniedException = "AccessDeniedException"
 )
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "aws", "parameterstore")
-}
 
 // New constructs a ParameterStore Provider that is specific to a store.
 func New(_ context.Context, cfg *aws.Config, prefix string, referentAuth bool) (*ParameterStore, error) {
@@ -377,7 +373,7 @@ func (pm *ParameterStore) GetAllSecrets(ctx context.Context, ref esv1.ExternalSe
 
 // findByName requires `ssm:GetParametersByPath` IAM permission, but the `Resource` scope can be limited.
 func (pm *ParameterStore) findByName(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
-	logger := ctxLog(ctx)
+	logger := logs.CtxLog(ctx)
 	matcher, err := find.New(*ref.Name)
 	if err != nil {
 		return nil, err
@@ -636,6 +632,11 @@ func (pm *ParameterStore) parameterNameWithVersion(ref esv1.ExternalSecretDataRe
 // Close cleans up resources held by the ParameterStore provider.
 func (pm *ParameterStore) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (pm *ParameterStore) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate checks if the provider is configured correctly.

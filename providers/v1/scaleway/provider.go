@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	smapi "github.com/scaleway/scaleway-sdk-go/api/secret/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/scaleway/scaleway-sdk-go/validation"
@@ -31,16 +30,11 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
-	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 var (
 	defaultAPIURL = "https://api.scaleway.com"
 )
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "scaleway")
-}
 
 var _ esv1.Provider = &Provider{}
 

@@ -30,6 +30,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -42,6 +43,7 @@ const (
 var (
 	errFailedToGetAllSecrets = "failed to get all secrets: %w"
 	errFailedToGetSecret     = "failed to get secret: %w"
+	nameAppends              = logs.NameAppends{"bitwarden"}
 )
 
 // PushSecret will write a single secret into the provider.
@@ -325,6 +327,11 @@ func (p *Provider) Validate() (esv1.ValidationResult, error) {
 // Close closes the provider.
 func (p *Provider) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *Provider) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (p *Provider) findSecretByRef(ctx context.Context, key, projectID string) (*SecretResponse, error) {

@@ -29,6 +29,7 @@ import (
 	ydxcommon "github.com/external-secrets/external-secrets/providers/v1/yandex/common"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/common/clock"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/lockbox/client"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 func adaptInput(store esv1.GenericStore) (*ydxcommon.SecretsClientInput, error) {
@@ -88,7 +89,7 @@ func newSecretGetter(ctx context.Context, apiEndpoint string, authorizedKey *iam
 // NewProvider creates a new Provider instance.
 func NewProvider() esv1.Provider {
 	return ydxcommon.InitYandexCloudProvider(
-		[]string{"provider", "yandex", "lockbox"},
+		logs.NameAppends{"provider", "yandex", "lockbox"},
 		clock.NewRealClock(),
 		adaptInput,
 		newSecretGetter,

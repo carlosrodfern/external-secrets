@@ -29,6 +29,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 // Requires PASSWORDDEPOT_TOKEN and PASSWORDDEPOT_PROJECT_ID to be set in environment variables
@@ -40,6 +41,10 @@ const (
 	errMissingSAK                             = "missing credentials while setting auth"
 	errUninitalizedPasswordDepotProvider      = "provider passworddepot is not initialized"
 	errNotImplemented                         = "%s not implemented"
+)
+
+var (
+	nameAppends = logs.NameAppends{"passworddepot"}
 )
 
 // Client defines the interface for interacting with the PasswordDepot API.
@@ -196,6 +201,11 @@ func (p *PasswordDepot) GetSecretMap(_ context.Context, ref esv1.ExternalSecretD
 // Close implements cleanup operations for the PasswordDepot provider.
 func (p *PasswordDepot) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *PasswordDepot) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // NewProvider creates a new Provider instance.

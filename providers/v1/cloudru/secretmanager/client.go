@@ -31,13 +31,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
-	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/providers/v1/cloudru/secretmanager/adapter"
+	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 var (
 	// ErrInvalidSecretVersion represents the error, when trying to access the secret with non-numeric version.
 	ErrInvalidSecretVersion = errors.New("invalid secret version: should be a valid int32 value or 'latest' keyword")
+	nameAppends             = logs.NameAppends{"cloudru", "secretmanager"}
 )
 
 // SecretProvider is an API client for the Cloud.ru Secret Manager.
@@ -185,3 +187,8 @@ func (c *Client) Validate() (esv1.ValidationResult, error) {
 
 // Close closes the client.
 func (c *Client) Close(_ context.Context) error { return nil }
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
+}

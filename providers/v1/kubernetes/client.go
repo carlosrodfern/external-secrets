@@ -36,12 +36,17 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/metadata"
 	"github.com/external-secrets/external-secrets/runtime/find"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
 )
 
 const (
 	metaLabels      = "labels"
 	metaAnnotations = "annotations"
+)
+
+var (
+	nameAppends = logs.NameAppends{"kubernetes"}
 )
 
 // GetSecret retrieves a secret from the Kubernetes API server by its key.
@@ -399,6 +404,11 @@ func (c *Client) findByName(ctx context.Context, ref esv1.ExternalSecretFind) (m
 // Close implements cleanup operations for the Kubernetes client.
 func (c *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func convertMap(in map[string][]byte) map[string]string {

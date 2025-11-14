@@ -34,6 +34,7 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -46,6 +47,10 @@ const (
 	errPassboltStoreHostSchemeNotHTTPS             = "host Url has to be https scheme"
 	errPassboltSecretPropertyInvalid               = "property must be one of name, username, uri, password or description"
 	errNotImplemented                              = "not implemented"
+)
+
+var (
+	nameAppends = logs.NameAppends{"passbolt"}
 )
 
 // ProviderPassbolt implements the External Secrets provider interface for Passbolt.
@@ -192,6 +197,11 @@ func (provider *ProviderPassbolt) GetAllSecrets(ctx context.Context, ref esv1.Ex
 // Close implements cleanup operations for the Passbolt provider.
 func (provider *ProviderPassbolt) Close(ctx context.Context) error {
 	return provider.client.Logout(ctx)
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (provider *ProviderPassbolt) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // ValidateStore validates the Passbolt SecretStore resource configuration.

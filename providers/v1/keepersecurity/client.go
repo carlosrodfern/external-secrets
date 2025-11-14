@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -63,6 +64,10 @@ const (
 	URLTypeExpr = "url|baseurl"
 	// URLType represents the URL field type.
 	URLType = "url"
+)
+
+var (
+	nameAppends = logs.NameAppends{"keepersecurity"}
 )
 
 // Client represents a KeeperSecurity client that can interact with the KeeperSecurity API.
@@ -185,6 +190,11 @@ func (c *Client) GetAllSecrets(_ context.Context, ref esv1.ExternalSecretFind) (
 // Close implements cleanup operations for the Keeper Security client.
 func (c *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // PushSecret creates or updates a secret in Keeper Security.

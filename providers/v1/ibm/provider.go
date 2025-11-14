@@ -39,6 +39,7 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/constants"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
 )
 
@@ -66,8 +67,9 @@ const (
 
 var contextTimeout = time.Minute * 2
 
-// https://github.com/external-secrets/external-secrets/issues/644
 var (
+	nameAppends = logs.NameAppends{"ibm"}
+	// https://github.com/external-secrets/external-secrets/issues/644
 	_ esv1.SecretsClient = &providerIBM{}
 	_ esv1.Provider      = &providerIBM{}
 )
@@ -576,6 +578,11 @@ func byteArrayMap(secretData map[string]any, secretMap map[string][]byte) map[st
 
 func (ibm *providerIBM) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (ibm *providerIBM) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (ibm *providerIBM) Validate() (esv1.ValidationResult, error) {

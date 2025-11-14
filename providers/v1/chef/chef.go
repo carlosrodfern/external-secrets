@@ -29,7 +29,6 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
 	"github.com/go-chef/chef"
-	"github.com/go-logr/logr"
 	"github.com/tidwall/gjson"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -79,7 +78,10 @@ const (
 	CallChefGetUser = "GetUser"
 )
 
-var contextTimeout = time.Second * 25
+var (
+	nameAppends    = logs.NameAppends{"chef", "secretsmanager"}
+	contextTimeout = time.Second * 25
+)
 
 // DatabagFetcher defines the interface for fetching data bags from Chef Infra Server.
 type DatabagFetcher interface {
@@ -101,10 +103,6 @@ type Providerchef struct {
 
 var _ esv1.SecretsClient = &Providerchef{}
 var _ esv1.Provider = &Providerchef{}
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "chef", "secretsmanager")
-}
 
 // NewClient creates a new Chef Infra Server client.
 func (providerchef *Providerchef) NewClient(ctx context.Context, store esv1.GenericStore, kube kclient.Client, namespace string) (esv1.SecretsClient, error) {
@@ -155,6 +153,11 @@ func (providerchef *Providerchef) Close(_ context.Context) error {
 	return nil
 }
 
+// GetNameAppends provides logger names for the contextual logger.
+func (providerchef *Providerchef) GetNameAppends() logs.NameAppends {
+	return nameAppends
+}
+
 // Validate checks if the client is configured correctly
 // to be able to retrieve secrets from the provider.
 func (providerchef *Providerchef) Validate() (esv1.ValidationResult, error) {
@@ -173,7 +176,7 @@ func (providerchef *Providerchef) GetAllSecrets(_ context.Context, _ esv1.Extern
 
 // GetSecret returns a databagItem present in the databag. format example: databagName/databagItemName.
 func (providerchef *Providerchef) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	if esutils.IsNil(providerchef.databagService) {
 		return nil, errors.New(errUninitalizedChefProvider)
 	}
@@ -266,7 +269,7 @@ func (providerchef *Providerchef) GetSecretMap(ctx context.Context, ref esv1.Ext
 		return nil, errors.New(errUninitalizedChefProvider)
 	}
 
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 
 	databagName := ref.Key
 

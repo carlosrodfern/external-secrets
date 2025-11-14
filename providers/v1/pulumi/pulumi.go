@@ -28,6 +28,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 type client struct {
@@ -49,7 +50,10 @@ const (
 	errPushWholeSecret               = "pushing the whole secret is not yet implemented"
 )
 
-var _ esv1.SecretsClient = &client{}
+var (
+	_           esv1.SecretsClient = &client{}
+	nameAppends                    = logs.NameAppends{"infisical"}
+)
 
 func (c *client) GetSecret(_ context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
 	env, err := c.escClient.OpenEnvironment(c.authCtx, c.organization, c.project, c.environment)
@@ -182,4 +186,9 @@ func (c *client) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (ma
 
 func (c *client) Close(context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }

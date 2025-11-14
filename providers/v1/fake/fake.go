@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/tidwall/gjson"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +48,10 @@ const (
 	FakeSetSecret   SourceOrigin = "SetSecret"
 )
 
+var (
+	nameAppends = logs.NameAppends{"fake"}
+)
+
 type Data struct {
 	Value   string
 	Version string
@@ -59,10 +62,6 @@ type Provider struct {
 	config           Config
 	database         map[string]Config
 	validationResult *esv1.ValidationResult
-}
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "fake")
 }
 
 // Capabilities return the provider supported capabilities (ReadOnly, WriteOnly, ReadWrite).
@@ -116,18 +115,15 @@ func getProvider(store esv1.GenericStore) (*esv1.FakeProvider, error) {
 }
 
 func (p *Provider) DeleteSecret(ctx context.Context, ref esv1.PushSecretRemoteRef) error {
-	ctxLog(ctx).WithValues("key", ref.GetRemoteKey()).Info("deleting secret")
 	return nil
 }
 
 func (p *Provider) SecretExists(ctx context.Context, ref esv1.PushSecretRemoteRef) (bool, error) {
-	ctxLog(ctx).WithValues("key", ref.GetRemoteKey()).Info("checking secret existence")
 	_, ok := p.config[ref.GetRemoteKey()]
 	return ok, nil
 }
 
 func (p *Provider) PushSecret(ctx context.Context, secret *corev1.Secret, data esv1.PushSecretData) error {
-	ctxLog(ctx).WithValues("secret", secret.GetName(), "key", data.GetSecretKey()).Info("pushing secret")
 	value := secret.Data[data.GetSecretKey()]
 	currentData, ok := p.config[data.GetRemoteKey()]
 	if !ok {
@@ -149,13 +145,6 @@ func (p *Provider) PushSecret(ctx context.Context, secret *corev1.Secret, data e
 // GetAllSecrets returns multiple secrets from the given ExternalSecretFind
 // Currently, only the Name operator is supported.
 func (p *Provider) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
-	log := ctxLog(ctx)
-	if ref.Name != nil {
-		log = log.WithValues("secretRegex", ref.Name.RegExp)
-	} else if ref.Path != nil {
-		log = log.WithValues("secretPath", ref.Path)
-	}
-	log.Info("getting all secrets")
 	if ref.Name != nil {
 		matcher, err := find.New(*ref.Name)
 		if err != nil {
@@ -190,18 +179,17 @@ func (p *Provider) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFin
 
 // GetSecret returns a single secret from the provider.
 func (p *Provider) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
-	ctxLog(ctx).WithValues("key", ref.Key).Info("getting secret")
 	data, ok := p.config[mapKey(ref.Key, ref.Version)]
 	if !ok || data.Version != ref.Version {
 		return nil, esv1.NoSecretErr
 	}
 
 	if ref.Property != "" {
+		logs.CtxLog(ctx).Info("found property reference")
 		val := gjson.Get(data.Value, ref.Property)
 		if !val.Exists() {
 			return nil, esv1.NoSecretErr
 		}
-
 		return []byte(val.String()), nil
 	}
 
@@ -210,7 +198,6 @@ func (p *Provider) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRem
 
 // GetSecretMap returns multiple k/v pairs from the provider.
 func (p *Provider) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
-	ctxLog(ctx).WithValues("key", ref.Key).Info("getting secret map")
 	ddata, ok := p.config[mapKey(ref.Key, ref.Version)]
 	if !ok || ddata.Version != ref.Version {
 		return nil, esv1.NoSecretErr
@@ -243,6 +230,11 @@ func (p *Provider) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretData
 
 func (p *Provider) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *Provider) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (p *Provider) Validate() (esv1.ValidationResult, error) {

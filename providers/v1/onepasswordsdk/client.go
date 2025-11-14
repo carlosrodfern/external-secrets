@@ -29,6 +29,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils/metadata"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -38,8 +39,11 @@ const (
 	errExpectedOneFieldMsgF = "found more than 1 fields with title '%s' in '%s', got %d"
 )
 
-// ErrKeyNotFound is returned when a key is not found in the 1Password Vaults.
-var ErrKeyNotFound = errors.New("key not found")
+var (
+	nameAppends = logs.NameAppends{"onepasswordsdk"}
+	// ErrKeyNotFound is returned when a key is not found in the 1Password Vaults.
+	ErrKeyNotFound = errors.New("key not found")
+)
 
 // PushSecretMetadataSpec defines the metadata configuration for pushing secrets to 1Password.
 type PushSecretMetadataSpec struct {
@@ -63,6 +67,11 @@ func (p *Provider) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRem
 // Close closes the client connection.
 func (p *Provider) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *Provider) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // DeleteSecret implements Secret Deletion on the provider when PushSecret.spec.DeletionPolicy=Delete.

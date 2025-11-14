@@ -30,14 +30,18 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	senhaseguraAuth "github.com/external-secrets/external-secrets/providers/v1/senhasegura/auth"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 type clientDSMInterface interface {
 	FetchSecrets() (respObj IsoDappResponse, err error)
 }
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &DSM{}
+var (
+	nameAppends = logs.NameAppends{"senhasegura", "dsm"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &DSM{}
+)
 
 // DSM service for SenhaseguraProvider.
 type DSM struct {
@@ -220,6 +224,11 @@ func (dsm *DSM) FetchSecrets() (respObj IsoDappResponse, err error) {
 // Close implements ESO interface and do nothing in senhasegura.
 func (dsm *DSM) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (dsm *DSM) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate if it has valid connection with senhasegura, credentials, authorization using fetchSecrets method

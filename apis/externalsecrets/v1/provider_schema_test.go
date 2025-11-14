@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,6 +73,10 @@ func (p *PP) GetAllSecrets(_ context.Context, _ ExternalSecretFind) (map[string]
 
 func (p *PP) Close(_ context.Context) error {
 	return nil
+}
+
+func (p *PP) GetNameAppends() logs.NameAppends {
+	return logs.NameAppends{}
 }
 
 func (p *PP) Validate() (ValidationResult, error) {

@@ -45,7 +45,7 @@ var _ esv1.Provider = &YandexCloudProvider{}
 
 // YandexCloudProvider implements the Provider interface for Yandex.Cloud services.
 type YandexCloudProvider struct {
-	ctxLoggerNames      []string
+	nameAppends         logs.NameAppends
 	clock               clock.Clock
 	adaptInputFunc      AdaptInputFunc
 	newSecretGetterFunc NewSecretGetterFunc
@@ -63,13 +63,9 @@ type iamTokenKey struct {
 	privateKeyHash   string
 }
 
-func ctxLog(ctx context.Context, names []string) logr.Logger {
-	return logs.CtxLog(ctx, names...)
-}
-
 // InitYandexCloudProvider creates and initializes a new YandexCloudProvider instance.
 func InitYandexCloudProvider(
-	ctxLoggerNames []string,
+	nameAppends logs.NameAppends,
 	clock clock.Clock,
 	adaptInputFunc AdaptInputFunc,
 	newSecretGetterFunc NewSecretGetterFunc,
@@ -77,7 +73,7 @@ func InitYandexCloudProvider(
 	iamTokenCleanupDelay time.Duration,
 ) *YandexCloudProvider {
 	provider := &YandexCloudProvider{
-		ctxLoggerNames:      ctxLoggerNames,
+		nameAppends:         nameAppends,
 		clock:               clock,
 		adaptInputFunc:      adaptInputFunc,
 		newSecretGetterFunc: newSecretGetterFunc,
@@ -142,6 +138,7 @@ func (p *YandexCloudProvider) Capabilities() esv1.SecretStoreCapabilities {
 
 // NewClient constructs a Yandex.Cloud Provider.
 func (p *YandexCloudProvider) NewClient(ctx context.Context, store esv1.GenericStore, kube kclient.Client, namespace string) (esv1.SecretsClient, error) {
+	log := logs.CtxLogWithNames(ctx, logs.NameAppends{"yandex"})
 	input, err := p.adaptInputFunc(store)
 	if err != nil {
 		return nil, err
@@ -182,23 +179,22 @@ func (p *YandexCloudProvider) NewClient(ctx context.Context, store esv1.GenericS
 		caCertificateData = []byte(caCert)
 	}
 
-	secretGetter, err := p.getOrCreateSecretGetter(ctx, input.APIEndpoint, authorizedKey, caCertificateData)
+	secretGetter, err := p.getOrCreateSecretGetter(ctx, log, input.APIEndpoint, authorizedKey, caCertificateData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Yandex.Cloud client: %w", err)
 	}
 
-	iamToken, err := p.getOrCreateIamToken(ctx, input.APIEndpoint, authorizedKey, caCertificateData)
+	iamToken, err := p.getOrCreateIamToken(ctx, log, input.APIEndpoint, authorizedKey, caCertificateData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create IAM token: %w", err)
 	}
 
-	return &yandexCloudSecretsClient{secretGetter, nil, iamToken.Token, input.ResourceKeyType, input.FolderID}, nil
+	return &yandexCloudSecretsClient{secretGetter, nil, iamToken.Token, input.ResourceKeyType, input.FolderID, p.nameAppends}, nil
 }
 
-func (p *YandexCloudProvider) getOrCreateSecretGetter(ctx context.Context, apiEndpoint string, authorizedKey *iamkey.Key, caCertificate []byte) (SecretGetter, error) {
+func (p *YandexCloudProvider) getOrCreateSecretGetter(ctx context.Context, log logr.Logger, apiEndpoint string, authorizedKey *iamkey.Key, caCertificate []byte) (SecretGetter, error) {
 	p.secretGetterMapMutex.Lock()
 	defer p.secretGetterMapMutex.Unlock()
-	log := ctxLog(ctx, p.ctxLoggerNames)
 	if _, ok := p.secretGetteMap[apiEndpoint]; !ok {
 		log.Info("creating SecretGetter", "apiEndpoint", apiEndpoint)
 		secretGetter, err := p.newSecretGetterFunc(ctx, apiEndpoint, authorizedKey, caCertificate)
@@ -210,11 +206,10 @@ func (p *YandexCloudProvider) getOrCreateSecretGetter(ctx context.Context, apiEn
 	return p.secretGetteMap[apiEndpoint], nil
 }
 
-func (p *YandexCloudProvider) getOrCreateIamToken(ctx context.Context, apiEndpoint string, authorizedKey *iamkey.Key, caCertificate []byte) (*IamToken, error) {
+func (p *YandexCloudProvider) getOrCreateIamToken(ctx context.Context, log logr.Logger, apiEndpoint string, authorizedKey *iamkey.Key, caCertificate []byte) (*IamToken, error) {
 	p.iamTokenMapMutex.Lock()
 	defer p.iamTokenMapMutex.Unlock()
 
-	log := ctxLog(ctx, p.ctxLoggerNames)
 	iamTokenKey := buildIamTokenKey(authorizedKey)
 	if iamToken, ok := p.iamTokenMap[iamTokenKey]; !ok || !p.isIamTokenUsable(iamToken) {
 		if authorizedKey != nil {
@@ -272,7 +267,7 @@ func (p *YandexCloudProvider) CleanUpIamTokenMap() {
 	p.iamTokenMapMutex.Lock()
 	defer p.iamTokenMapMutex.Unlock()
 
-	log := ctxLog(context.Background(), p.ctxLoggerNames)
+	log := logs.CtxLog(context.Background())
 	for key, value := range p.iamTokenMap {
 		if p.clock.CurrentTime().After(value.ExpiresAt) {
 			log.Info("deleting IAM token", "authorizedKeyId", key.authorizedKeyID)

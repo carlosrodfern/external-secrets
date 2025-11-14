@@ -90,14 +90,16 @@ func (m *Manager) GetFromStore(ctx context.Context, store esv1.GenericStore, nam
 	if secretClient != nil {
 		return secretClient, nil
 	}
-	m.log.V(1).Info("creating new client",
-		"provider", fmt.Sprintf("%T", storeProvider),
-		"store", fmt.Sprintf("%s/%s", store.GetNamespace(), store.GetName()))
+	log := m.log.WithValues("store", fmt.Sprintf("%s/%s", store.GetNamespace(), store.GetName()))
+	log.V(1).Info("creating new client", "provider", fmt.Sprintf("%T", storeProvider))
 	// secret client is created only if we are going to refresh
 	// this skip an unnecessary check/request in the case we are not going to do anything
-	secretClient, err = storeProvider.NewClient(ctx, store, m.client, namespace)
+	secretClient, err = storeProvider.NewClient(logr.NewContext(ctx, log.WithName("provider")), store, m.client, namespace)
 	if err != nil {
 		return nil, err
+	}
+	secretClient = &secretClientLogger{
+		client: secretClient,
 	}
 	idx := storeKey(storeProvider)
 	m.clientMap[idx] = &clientVal{

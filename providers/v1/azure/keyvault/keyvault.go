@@ -64,6 +64,7 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/metadata"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
 )
 
@@ -112,9 +113,12 @@ const (
 	errReadTokenFile          = "unable to read token file %s: %w"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &Azure{}
-var _ esv1.Provider = &Azure{}
+var (
+	nameAppends = logs.NameAppends{"keyvault"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &Azure{}
+	_ esv1.Provider      = &Azure{}
+)
 
 // SecretClient is an interface to keyvault.BaseClient.
 type SecretClient interface {
@@ -1256,6 +1260,11 @@ func getAuthorizerForClientCertificate(clientID string, certificateBytes []byte,
 // Close closes the Azure Key Vault provider.
 func (a *Azure) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (a *Azure) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate validates the Azure Key Vault provider configuration.

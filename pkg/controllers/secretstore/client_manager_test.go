@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 func TestManagerGet(t *testing.T) {
@@ -151,7 +152,7 @@ func TestManagerGet(t *testing.T) {
 				assert.NotNil(t, sc)
 				c, ok := mgr.clientMap[provKey]
 				require.True(t, ok)
-				assert.Same(t, c.client, clientA)
+				assert.Same(t, unwrapClient(c.client), clientA)
 			},
 
 			afterClose: func() {
@@ -193,7 +194,7 @@ func TestManagerGet(t *testing.T) {
 				assert.NotNil(t, sc)
 				c, ok := mgr.clientMap[provKey]
 				assert.True(t, ok)
-				assert.Same(t, c.client, clientB)
+				assert.Same(t, unwrapClient(c.client), clientB)
 			},
 
 			afterClose: func() {
@@ -237,8 +238,8 @@ func TestManagerGet(t *testing.T) {
 				assert.NotNil(t, sc)
 				c, ok := mgr.clientMap[provKey]
 				assert.True(t, ok)
-				assert.Same(t, c.client, clientA)
-				assert.Same(t, sc, clientA)
+				assert.Same(t, unwrapClient(c.client), clientA)
+				assert.Same(t, unwrapClient(sc), clientA)
 			},
 
 			afterClose: func() {
@@ -282,8 +283,8 @@ func TestManagerGet(t *testing.T) {
 				assert.NotNil(t, sc)
 				c, ok := mgr.clientMap[provKey]
 				assert.True(t, ok)
-				assert.Same(t, c.client, clientB)
-				assert.Same(t, sc, clientB)
+				assert.Same(t, unwrapClient(c.client), clientB)
+				assert.Same(t, unwrapClient(sc), clientB)
 				assert.True(t, clientA.closeCalled)
 			},
 			afterClose: func() {
@@ -411,6 +412,17 @@ func TestShouldProcessSecret(t *testing.T) {
 	}
 }
 
+func unwrapClient(client esv1.SecretsClient) esv1.SecretsClient {
+	if client == nil {
+		return nil
+	}
+	wrapper, ok := client.(*secretClientLogger)
+	if !ok {
+		return client
+	}
+	return wrapper.client
+}
+
 type WrapProvider struct {
 	newClientFunc func(
 		context.Context,
@@ -475,4 +487,8 @@ func (c *MockFakeClient) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretF
 func (c *MockFakeClient) Close(_ context.Context) error {
 	c.closeCalled = true
 	return nil
+}
+
+func (c *MockFakeClient) GetNameAppends() logs.NameAppends {
+	return logs.NameAppends{}
 }

@@ -30,6 +30,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -39,6 +40,10 @@ const (
 	errInvalidClusterStoreMissingSAKNamespace = "invalid clusterStore missing SAK namespace"
 	errFetchSAKSecret                         = "couldn't find secret on cluster: %w"
 	errMissingSAK                             = "missing credentials while setting auth"
+)
+
+var (
+	nameAppends = logs.NameAppends{"device42"}
 )
 
 // Client defines the interface for interacting with Device42 passwords.
@@ -191,6 +196,11 @@ func (p *Device42) GetSecretMap(_ context.Context, ref esv1.ExternalSecretDataRe
 // Close implements cleanup operations for the Device42 client.
 func (p *Device42) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *Device42) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // NewProvider creates a new Provider instance.

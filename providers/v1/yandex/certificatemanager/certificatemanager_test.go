@@ -37,6 +37,7 @@ import (
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/certificatemanager/client"
 	ydxcommon "github.com/external-secrets/external-secrets/providers/v1/yandex/common"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/common/clock"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -994,7 +995,7 @@ func TestGetSecretWithInvalidFetchingPolicy(t *testing.T) {
 
 func newCertificateManagerProvider(clock clock.Clock, fakeCertificateManagerServer *client.FakeCertificateManagerServer) *ydxcommon.YandexCloudProvider {
 	return ydxcommon.InitYandexCloudProvider(
-		[]string{"provider", "yandex", "certificatemanager"},
+		logs.NameAppends{"provider", "yandex", "certificatemanager"},
 		clock,
 		adaptInput,
 		func(_ context.Context, _ string, _ *iamkey.Key, _ []byte) (ydxcommon.SecretGetter, error) {

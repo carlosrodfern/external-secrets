@@ -37,6 +37,7 @@ import (
 	ydxcommon "github.com/external-secrets/external-secrets/providers/v1/yandex/common"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/common/clock"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/lockbox/client"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -948,7 +949,7 @@ func TestGetSecretWithInvalidFetchingPolicy(t *testing.T) {
 
 func newLockboxProvider(clock clock.Clock, fakeLockboxServer *client.FakeLockboxServer) *ydxcommon.YandexCloudProvider {
 	return ydxcommon.InitYandexCloudProvider(
-		[]string{"provider", "yandex", "lockbox"},
+		logs.NameAppends{"provider", "yandex", "lockbox"},
 		clock,
 		adaptInput,
 		func(context.Context, string, *iamkey.Key, []byte) (ydxcommon.SecretGetter, error) {

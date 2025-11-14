@@ -24,14 +24,23 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// CtxLog creates a new logger from context, or ctrl.Log if no present, and appends the names via WithName.
-func CtxLog(ctx context.Context, names ...string) logr.Logger {
+// NameAppends contains the names to be added to the logger.
+type NameAppends []string
+
+// CtxLog creates a new logger from context, or ctrl.Log if no present.
+func CtxLog(ctx context.Context) logr.Logger {
 	var log logr.Logger
 	if found, err := logr.FromContext(ctx); err == nil {
 		log = found
 	} else {
 		log = ctrl.Log
 	}
+	return log
+}
+
+// CtxLogWithNames creates a new logger from context, or ctrl.Log if no present, and appends the names via WithName.
+func CtxLogWithNames(ctx context.Context, names NameAppends) logr.Logger {
+	log := CtxLog(ctx)
 	for _, name := range names {
 		log = log.WithName(name)
 	}

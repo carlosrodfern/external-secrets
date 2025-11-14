@@ -28,9 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	conjurutil "github.com/external-secrets/external-secrets/providers/v1/conjur/util"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
-	"github.com/external-secrets/external-secrets/providers/v1/conjur/util"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 	errBadServiceAPIKey      = "could not get Auth.Apikey.ApiKeyRef: %w"
 	errGetKubeSATokenRequest = "cannot request Kubernetes service account token for service account %q: %w"
 	errSecretKeyFmt          = "cannot find secret data for key: %q"
+	nameAppends              = logs.NameAppends{"conjur"}
 )
 
 // Client is a provider for Conjur.
@@ -121,6 +123,11 @@ func (c *Client) Validate() (esv1.ValidationResult, error) {
 // Close closes the provider.
 func (c *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // conjurClientFromAPIKey creates a new Conjur client using API key authentication.

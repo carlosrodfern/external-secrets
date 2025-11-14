@@ -46,6 +46,7 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -69,9 +70,12 @@ const (
 	authConfigurationsCachePoolSize = 50
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &VaultManagementService{}
-var _ esv1.Provider = &VaultManagementService{}
+var (
+	nameAppends = logs.NameAppends{"oracle"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &VaultManagementService{}
+	_ esv1.Provider      = &VaultManagementService{}
+)
 
 // VaultManagementService implements the External Secrets provider interface for Oracle Cloud Infrastructure Vault.
 type VaultManagementService struct {
@@ -472,6 +476,11 @@ func getUserAuthConfigurationProvider(ctx context.Context, kube kclient.Client, 
 // Close releases any resources used by the VaultManagementService.
 func (vms *VaultManagementService) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (vms *VaultManagementService) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate performs validation of the Oracle Cloud Infrastructure provider configuration.

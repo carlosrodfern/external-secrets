@@ -33,9 +33,13 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/find"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
-var errNoSecretForName = errors.New("no secret for this name")
+var (
+	errNoSecretForName = errors.New("no secret for this name")
+	nameAppends        = logs.NameAppends{"scaleway"}
+)
 
 type client struct {
 	api       secretAPI
@@ -310,7 +314,7 @@ func (c *client) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRe
 
 // GetAllSecrets lists secrets matching the given criteria and return their latest versions.
 func (c *client) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	request := smapi.ListSecretsRequest{
 		ProjectID: &c.projectID,
 		Page:      scw.Int32Ptr(1),
@@ -381,6 +385,11 @@ func (c *client) safeConvertInt32(page *int32) uint64 {
 
 func (c *client) Close(context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (c *client) accessSecretVersion(ctx context.Context, secretRef *scwSecretRef, versionSpec string) ([]byte, error) {

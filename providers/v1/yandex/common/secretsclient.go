@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -39,6 +40,7 @@ type yandexCloudSecretsClient struct {
 	iamToken        string
 	resourceKeyType ResourceKeyType
 	folderID        string
+	nameAppends     logs.NameAppends
 }
 
 func (c *yandexCloudSecretsClient) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
@@ -72,4 +74,9 @@ func (c *yandexCloudSecretsClient) GetAllSecrets(_ context.Context, _ esv1.Exter
 
 func (c *yandexCloudSecretsClient) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *yandexCloudSecretsClient) GetNameAppends() logs.NameAppends {
+	return c.nameAppends
 }

@@ -40,6 +40,7 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils/metadata"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 	"github.com/external-secrets/external-secrets/runtime/find"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -87,6 +88,8 @@ var (
 	ErrExpectedOneField = errors.New(errExpectedOneFieldMsg)
 	// ErrExpectedOneItem is returned when more than 1 item is found in the 1Password Vaults.
 	ErrExpectedOneItem = errors.New(errExpectedOneItemMsg)
+
+	nameAppends = logs.NameAppends{"onepassword"}
 )
 
 // ProviderOnePassword is a provider for 1Password.
@@ -492,6 +495,11 @@ func (provider *ProviderOnePassword) Close(_ context.Context) error {
 	provider.mu.Lock()
 	defer provider.mu.Unlock()
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (provider *ProviderOnePassword) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 func (provider *ProviderOnePassword) findItem(name string) (*onepassword.Item, error) {

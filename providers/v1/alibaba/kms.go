@@ -35,6 +35,7 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -45,9 +46,12 @@ const (
 	errNotImplemented              = "not implemented"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &KeyManagementService{}
-var _ esv1.Provider = &KeyManagementService{}
+var (
+	nameAppends = logs.NameAppends{"alibaba"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &KeyManagementService{}
+	_ esv1.Provider      = &KeyManagementService{}
+)
 
 // KeyManagementService implements the Alibaba KMS provider for External Secrets.
 type KeyManagementService struct {
@@ -138,6 +142,11 @@ func (kms *KeyManagementService) GetSecretMap(ctx context.Context, ref esv1.Exte
 // Capabilities return the provider supported capabilities (ReadOnly, WriteOnly, ReadWrite).
 func (kms *KeyManagementService) Capabilities() esv1.SecretStoreCapabilities {
 	return esv1.SecretStoreReadOnly
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (kms *KeyManagementService) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // NewClient constructs a new secrets client based on the provided store.

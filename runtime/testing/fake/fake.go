@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 var _ esv1.Provider = &Client{}
@@ -139,6 +140,11 @@ func (v *Client) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRe
 
 func (v *Client) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (v *Client) GetNameAppends() logs.NameAppends {
+	return logs.NameAppends{}
 }
 
 func (v *Client) Validate() (esv1.ValidationResult, error) {

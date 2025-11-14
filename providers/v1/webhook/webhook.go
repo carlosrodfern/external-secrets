@@ -33,6 +33,7 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/providers/v1/webhook/pkg/webhook"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
@@ -40,9 +41,12 @@ const (
 	errFailedToGetStore = "failed to get store: %w"
 )
 
-// https://github.com/external-secrets/external-secrets/issues/644
-var _ esv1.SecretsClient = &WebHook{}
-var _ esv1.Provider = &Provider{}
+var (
+	nameAppends = logs.NameAppends{"webhook"}
+	// https://github.com/external-secrets/external-secrets/issues/644
+	_ esv1.SecretsClient = &WebHook{}
+	_ esv1.Provider      = &Provider{}
+)
 
 // Provider satisfies the provider interface.
 type Provider struct{}
@@ -312,6 +316,11 @@ func (w *WebHook) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataR
 // Close closes the connection to the webhook provider.
 func (w *WebHook) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (w *WebHook) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate checks if the webhook provider is configured correctly.

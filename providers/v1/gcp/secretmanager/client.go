@@ -29,7 +29,6 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
-	"github.com/go-logr/logr"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/tidwall/gjson"
@@ -85,6 +84,10 @@ const (
 	regionalSecretVersionsPath = "projects/%s/locations/%s/secrets/%s/versions/%s"
 )
 
+var (
+	nameAppends = logs.NameAppends{"gcp", "secretsmanager"}
+)
+
 // Client represents a Google Cloud Platform Secret Manager client.
 type Client struct {
 	smClient  GoogleSecretManagerClient
@@ -108,10 +111,6 @@ type GoogleSecretManagerClient interface {
 	GetSecret(ctx context.Context, req *secretmanagerpb.GetSecretRequest, opts ...gax.CallOption) (*secretmanagerpb.Secret, error)
 	UpdateSecret(context.Context, *secretmanagerpb.UpdateSecretRequest, ...gax.CallOption) (*secretmanagerpb.Secret, error)
 	ListSecretVersions(ctx context.Context, req *secretmanagerpb.ListSecretVersionsRequest, opts ...gax.CallOption) *secretmanager.SecretVersionIterator
-}
-
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "gcp", "secretsmanager")
 }
 
 // DeleteSecret deletes a secret from Google Cloud Secret Manager.
@@ -373,7 +372,7 @@ func (c *Client) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind)
 }
 
 func (c *Client) findByName(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	// regex matcher
 	matcher, err := find.New(*ref.Name)
 	if err != nil {
@@ -432,7 +431,7 @@ func (c *Client) getData(ctx context.Context, key string) ([]byte, error) {
 }
 
 func (c *Client) findByTags(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	var tagFilter string
 	for k, v := range ref.Tags {
 		tagFilter = fmt.Sprintf("%slabels.%s=%s ", tagFilter, k, v)
@@ -666,6 +665,11 @@ func (c *Client) Close(_ context.Context) error {
 		return fmt.Errorf(errClientClose, err)
 	}
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (c *Client) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate performs validation of the Google Cloud Secret Manager client configuration.

@@ -31,7 +31,6 @@ import (
 	"github.com/BeyondTrust/go-client-library-passwordsafe/api/secrets"
 	"github.com/BeyondTrust/go-client-library-passwordsafe/api/utils"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -58,6 +57,7 @@ var (
 	errMissingSecretName         = errors.New("must specify a secret name")
 	errMissingSecretKey          = errors.New("must specify a secret key")
 	maxFileSecretSizeBytes       = 5000000
+	nameAppends                  = logs.NameAppends{"beyondtrust"}
 )
 
 // Provider is a Password Safe secrets provider implementing NewClient and ValidateStore for the esv1.Provider interface.
@@ -83,10 +83,6 @@ type AuthenticatorInput struct {
 	RetryMaxElapsedTimeMinutes int
 }
 
-func ctxLog(ctx context.Context) logr.Logger {
-	return logs.CtxLog(ctx, "provider", "beyondtrust")
-}
-
 // Capabilities implements v1beta1.Provider.
 func (*Provider) Capabilities() esv1.SecretStoreCapabilities {
 	return esv1.SecretStoreReadOnly
@@ -95,6 +91,11 @@ func (*Provider) Capabilities() esv1.SecretStoreCapabilities {
 // Close implements v1beta1.SecretsClient.
 func (*Provider) Close(_ context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (*Provider) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // DeleteSecret implements v1beta1.SecretsClient.
@@ -114,7 +115,7 @@ func (*Provider) PushSecret(_ context.Context, _ *v1.Secret, _ esv1.PushSecretDa
 
 // Validate implements v1beta1.SecretsClient.
 func (p *Provider) Validate() (esv1.ValidationResult, error) {
-	log := ctxLog(context.Background())
+	log := logs.CtxLog(context.Background())
 	timeout := 15 * time.Second
 	clientURL := p.apiURL
 
@@ -135,7 +136,7 @@ func (*Provider) SecretExists(_ context.Context, _ esv1.PushSecretRemoteRef) (bo
 // NewClient this is where we initialize the SecretClient and return it for the controller to use.
 func (p *Provider) NewClient(ctx context.Context, store esv1.GenericStore, kube client.Client, namespace string) (esv1.SecretsClient, error) {
 	config := store.GetSpec().Provider.Beyondtrust
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 	logger := logging.NewLogrLogger(&log)
 
 	storeKind := store.GetKind()
@@ -323,7 +324,7 @@ func (p *Provider) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (
 // GetSecret reads the secret from the Password Safe server and returns it. The controller uses the value here to
 // create the Kubernetes secret.
 func (p *Provider) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
-	log := ctxLog(ctx)
+	log := logs.CtxLog(ctx)
 
 	managedAccountType := !strings.EqualFold(p.retrievaltype, "SECRET")
 

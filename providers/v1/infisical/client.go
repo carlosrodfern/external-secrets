@@ -29,15 +29,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
-	"github.com/external-secrets/external-secrets/runtime/find"
-	"github.com/external-secrets/external-secrets/runtime/metrics"
 	"github.com/external-secrets/external-secrets/providers/v1/infisical/constants"
+	"github.com/external-secrets/external-secrets/runtime/find"
+	"github.com/external-secrets/external-secrets/runtime/logs"
+	"github.com/external-secrets/external-secrets/runtime/metrics"
 )
 
 var (
 	errNotImplemented     = errors.New("not implemented")
 	errPropertyNotFound   = "property %s does not exist in secret %s"
 	errTagsNotImplemented = errors.New("find by tags not supported")
+	nameAppends           = logs.NameAppends{"infisical"}
 )
 
 const (
@@ -180,6 +182,11 @@ func (p *Provider) GetAllSecrets(_ context.Context, ref esv1.ExternalSecretFind)
 		selected[secret.SecretKey] = []byte(secret.SecretValue)
 	}
 	return selected, nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (p *Provider) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // Validate checks if the client is configured correctly.

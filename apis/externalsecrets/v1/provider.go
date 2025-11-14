@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 
+	"github.com/external-secrets/external-secrets/runtime/logs"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -97,6 +98,9 @@ type SecretsClient interface {
 	GetAllSecrets(ctx context.Context, ref ExternalSecretFind) (map[string][]byte, error)
 
 	Close(ctx context.Context) error
+
+	// GetNameAppends provides logger names for the contextual logger.
+	GetNameAppends() logs.NameAppends
 }
 
 // NoSecretErr is a sentinel error for when a secret is not found.

@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	previderclient "github.com/previder/vault-cli/pkg"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,13 +29,17 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/logs"
 )
 
 const (
 	errNotImplemented = "not implemented"
 )
 
-var _ esv1.Provider = &SecretManager{}
+var (
+	_           esv1.Provider = &SecretManager{}
+	nameAppends               = logs.NameAppends{"previder"}
+)
 
 // SecretManager implements the esv1.Provider interface for Previder Vault.
 type SecretManager struct {
@@ -149,6 +154,11 @@ func (s *SecretManager) GetAllSecrets(context.Context, esv1.ExternalSecretFind) 
 // Close cleans up any resources held by the client.
 func (s *SecretManager) Close(context.Context) error {
 	return nil
+}
+
+// GetNameAppends provides logger names for the contextual logger.
+func (s *SecretManager) GetNameAppends() logs.NameAppends {
+	return nameAppends
 }
 
 // NewProvider creates a new Provider instance.
